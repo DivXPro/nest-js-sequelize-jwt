@@ -1,12 +1,9 @@
-'use strict';
-
-require('dotenv').config();
-
 import { NestFactory } from '@nestjs/core';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import { DispatchError } from './modules/common/filters/DispatchError';
 import { ApplicationModule } from './modules/app.module';
+import { logger } from './modules/common/logger';
 
 const instance = express();
 /* Express middleware. */
@@ -18,5 +15,5 @@ NestFactory.create(ApplicationModule, instance).then(app => {
     /* App filters. */
     app.useGlobalFilters(new DispatchError());
     /* End of app filters. */
-    app.listen(3000, () => console.log('Application is listening on port 3000.'));
+    app.listen(3000, () => logger.info('Application is listening on port 3000.'));
 });

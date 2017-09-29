@@ -1,0 +1,16 @@
+{
+  DB: {
+    DB_DIALECT: "mysql",
+    DB_USER: "root",
+    DB_PASSWORD: "test",
+    DB_NAME: "test",
+    DB_HOST: "localhost",
+    DB_PORT: 3306,
+    DB_LOG: false,
+    JWT_ID: "jsonwebtoken",
+    JWT_KEY: "secretKey",
+  },
+  LOG: {
+    LEVEL: "debug",
+  }
+}
