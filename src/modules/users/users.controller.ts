@@ -41,7 +41,11 @@ export class UsersController {
     const user = await User.findOne<User>({
       where: { id }
     });
-    return res.status(HttpStatus.OK).json(user);
+    if (user) {
+      return res.status(HttpStatus.OK).json(user);
+    } else {
+      return res.status(HttpStatus.NOT_FOUND);
+    }
   }
 
   @Put('users/:id')

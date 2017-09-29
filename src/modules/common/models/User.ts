@@ -2,77 +2,149 @@
 
 import * as crypto from 'crypto';
 import {
-    Table, Column, Model, DataType,
-    CreatedAt, UpdatedAt, DeletedAt, BeforeValidate, BeforeCreate
+  Table,
+  Column,
+  Model,
+  DataType,
+  CreatedAt,
+  UpdatedAt,
+  DeletedAt,
+  BeforeValidate,
+  BeforeCreate
 } from 'sequelize-typescript';
 import { IDefineOptions } from 'sequelize-typescript/lib/interfaces/IDefineOptions';
 import { MessageCodeError } from '../lib/error/MessageCodeError';
 
-const tableOptions: IDefineOptions = { timestamp: true, tableName: 'tmp_users' } as IDefineOptions;
+const tableOptions: IDefineOptions = {
+  timestamp: true,
+  tableName: 'user',
+  underscored: true,
+  freezeTableName: true
+} as IDefineOptions;
 
 @Table(tableOptions)
 export class User extends Model<User> {
-    @Column({
-        type: DataType.NUMERIC,
-        allowNull: false,
-        autoIncrement: true,
-        unique: true,
-        primaryKey: true
-    })
-    id: number;
+  @Column({
+    type: DataType.BIGINT(14),
+    allowNull: false,
+    autoIncrement: true,
+    unique: true,
+    primaryKey: true
+  })
+  id: number;
 
-    @Column({
-        type: DataType.CHAR(30),
-        allowNull: false
-    })
-    firstName: string;
+  @Column({
+    type: DataType.STRING,
+    allowNull: false
+  })
+  name: string;
 
-    @Column({
-        type: DataType.CHAR(30),
-        allowNull: false
-    })
-    lastName: string;
+  @Column({
+    type: DataType.STRING,
+    field: 'name_pinyin'
+  })
+  namePinyin;
 
-    @Column({
-        type: DataType.CHAR(100),
-        allowNull: false,
-        validate: {
-            isEmail: true
-        }
-    })
-    email: string;
+  @Column({
+    type: DataType.BIGINT(14),
+    field: 'account_id'
+  })
+  accountId: number;
 
-    @Column({
-        type: DataType.TEXT,
-        allowNull: false
-    })
-    password: string;
+  @Column({
+    type: DataType.BIGINT(14),
+    field: 'corp_id',
+    allowNull: false
+  })
+  corpId: number;
 
-    @Column({ type: DataType.DATE })
-    birthday: Date;
+  @Column({
+    type: DataType.BIGINT(14),
+    field: 'group_id',
+    allowNull: false
+  })
+  groupId: number;
 
-    @CreatedAt
-    createdAt: Date;
+  @Column({
+    type: DataType.BIGINT(14),
+    field: 'dept_id'
+  })
+  deptId: number;
 
-    @UpdatedAt
-    updatedAt: Date;
+  @Column({
+    type: DataType.BIGINT(14),
+    field: 'position_id'
+  })
+  positionId: number;
 
-    @DeletedAt
-    deletedAt: Date;
+  @Column({
+    type: DataType.BIGINT(14),
+    field: 'rank_id'
+  })
+  rankId: number;
 
-    // @BeforeValidate
-    // static validateData (user: User, options: any) {
-    //     if (!options.transaction) throw new Error('Missing transaction.');
-    //     if (!user.firstName) throw new MessageCodeError('user:create:missingFirstName');
-    //     if (!user.lastName) throw new MessageCodeError('user:create:missingLastName');
-    //     if (!user.email) throw new MessageCodeError('user:create:missingEmail');
-    //     if (!user.password) throw new MessageCodeError('user:create:missingPassword');
-    // }
+  @Column({
+    type: DataType.INTEGER(14),
+    field: 'cost_center_id'
+  })
+  costCenterId: number;
 
-    // @BeforeCreate
-    // static async hashPassword (user: User, options: any) {
-    //     if (!options.transaction) throw new Error('Missing transaction.');
+  @Column({
+    type: DataType.INTEGER(14),
+    field: 'payroll_group_id',
+    allowNull: false,
+    defaultValue: 0
+  })
+  payrollGroupId: number;
 
-    //     user.password = crypto.createHmac('sha256', user.password).digest('hex');
-    // }
+  @Column({
+    type: DataType.STRING
+  })
+  phone: string;
+
+  @Column({
+    type: DataType.STRING
+  })
+  mail: string;
+
+  @Column({
+    type: DataType.INTEGER(1)
+  })
+  state: 0 | 1;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'job_number'
+  })
+  jobNumber: string;
+
+  @Column({
+    type: DataType.DATE,
+    field: 'entry_date'
+  })
+  entryDate: Date;
+
+  @Column({
+    type: DataType.DATE,
+    field: 'positive_date'
+  })
+  positiveDate: Date;
+
+  @Column({
+    type: DataType.DATE,
+    field: 'leave_date'
+  })
+  leaveDate: Date;
+
+  @Column({
+    type: DataType.INTEGER(1),
+    field: 'type'
+  })
+  type: number;
+
+  @Column({
+    type: DataType.INTEGER(1),
+    field: 'is_deleted'
+  })
+  isDeleted: 0 | 1;
 }

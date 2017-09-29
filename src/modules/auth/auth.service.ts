@@ -35,7 +35,7 @@ export class AuthService implements IAuthService {
 
         const payload = {
             id: user.id,
-            email: user.email
+            email: user.mail
         };
 
         return await jwt.sign(payload, process.env.JWT_KEY || '', this._options);

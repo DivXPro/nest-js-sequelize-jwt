@@ -8,8 +8,8 @@ import { AuthModule } from './auth/auth.module';
     controllers: [],
     components: [],
     modules: [
+        AuthModule,
         UsersModule,
-        AuthModule
     ],
     exports: []
 })
