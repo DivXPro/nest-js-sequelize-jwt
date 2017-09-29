@@ -1,16 +1,22 @@
-'use strict';
+import * as config from 'config';
+import * as path from 'path';
+import * as childProcess from 'child_process';
+import * as Umzug from 'umzug';
+import { sequelize } from './modules/common/config/dataBase';
 
-require('dotenv').config();
+interface DBConfig {
+  DB_USER: string;
+  DB_DIALECT: string;
+  DB_PASSWORD: string;
+  DB_NAME: string;
+  DB_HOST: string;
+  DB_PORT: number;
+  DB_LOG: boolean;
+  JWT_ID: string;
+  JWT_KEY: string;
+}
 
-const path = require('path');
-const childProcess = require('child_process');
-const Promise = require('bluebird');
-const Umzug = require('umzug');
-
-import { sequelize } from './src/modules/common/config/dataBase';
-
-const DB_NAME = process.env.DB_NAME;
-const DB_USER = process.env.DB_USER;
+const DB = config.get('DB') as DBConfig;
 
 const umzug = new Umzug({
   storage: 'sequelize',
@@ -117,10 +123,10 @@ function cmdHardReset() {
   return new Promise((resolve, reject) => {
     setImmediate(() => {
       try {
-        console.log(`dropdb ${DB_NAME}`);
-        childProcess.spawnSync(`dropdb ${DB_NAME}`);
-        console.log(`createdb ${DB_NAME} --username ${DB_USER}`);
-        childProcess.spawnSync(`createdb ${DB_NAME} --username ${DB_USER}`);
+        console.log(`dropdb ${DB.DB_NAME}`);
+        childProcess.spawnSync(`dropdb ${DB.DB_NAME}`);
+        console.log(`createdb ${DB.DB_NAME} --username ${DB.DB_USER}`);
+        childProcess.spawnSync(`createdb ${DB.DB_NAME} --username ${DB.DB_USER}`);
         resolve();
       } catch (e) {
         console.log(e);

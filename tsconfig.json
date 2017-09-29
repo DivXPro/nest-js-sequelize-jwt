@@ -13,7 +13,7 @@
     "outDir": "build"
   },
   "include": [
-    "migrate.ts",
+    "src/migrate.ts",
     "src/server.ts",
     "src/modules/common/config/**/*.ts",
     "src/modules/common/filters/**/*.ts",
