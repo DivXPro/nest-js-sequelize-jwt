@@ -11,10 +11,10 @@ export const databaseConfig: DatabaseConfig = {
         database: process.env.DB_NAME || '',
         host: process.env.DB_HOST || '127.0.0.1',
         port: Number(process.env.DB_PORT) || 5432,
-        dialect: 'postgres',
+        dialect: process.env.DB_DIALECT || 'mysql',
         logging: false,
         force: true,
-        timezone: '+02:00',
+        timezone: '+08:00',
         modelPaths: [
             path.resolve(__dirname, '../models')
         ]
@@ -25,10 +25,10 @@ export const databaseConfig: DatabaseConfig = {
         database: process.env.DB_NAME || '',
         host: process.env.DB_HOST || '127.0.0.1',
         port: Number(process.env.DB_PORT) || 5432,
-        dialect: 'postgres',
+        dialect: process.env.DB_DIALECT || 'mysql',
         logging: false,
         force: true,
-        timezone: '+02:00',
+        timezone: '+08:00',
         modelPaths: [
             path.resolve(__dirname, '../models')
         ]
@@ -39,10 +39,10 @@ export const databaseConfig: DatabaseConfig = {
         database: process.env.DB_NAME || '',
         host: process.env.DB_HOST || '127.0.0.1',
         port: Number(process.env.DB_PORT) || 5432,
-        dialect: 'postgres',
+        dialect: process.env.DB_DIALECT || 'mysql',
         logging: true,
         force: true,
-        timezone: '+02:00',
+        timezone: '+08:00',
         modelPaths: [
             path.resolve(__dirname, '../models')
         ]
@@ -52,4 +52,5 @@ export const databaseConfig: DatabaseConfig = {
 const config = !process.env.NODE_ENV || process.env.NODE_ENV === 'development' ?
     databaseConfig.development :
     databaseConfig.production;
+
 export const sequelize: Sequelize = new Sequelize(config);

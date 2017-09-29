@@ -1,12 +1,10 @@
-'use strict';
+import { sequelize } from '../config/dataBase';
 
-import { sequelize } from '../models/index';
-
-export async function up () {
+export function up () {
     // language=PostgreSQL
-    sequelize.query(`
-        CREATE TABLE "users" (
-            "id" SERIAL UNIQUE PRIMARY KEY NOT NULL,
+    return sequelize.query(`
+        CREATE TABLE "tmp_users" (
+            "id" AUTO_INCREMENT UNIQUE PRIMARY KEY NOT NULL,
             "firstName" VARCHAR(30) NOT NULL,
             "lastName" VARCHAR(30) NOT NULL,
             "email" VARCHAR(100) UNIQUE NOT NULL,
@@ -18,10 +16,9 @@ export async function up () {
         );
     `);
 
-    console.log('*Table users created!*');
 }
 
-export async function down () {
+export function down () {
     // language=PostgreSQL
-    sequelize.query(`DROP TABLE users`);
+    return sequelize.query(`DROP TABLE tmp_users`);
 }
