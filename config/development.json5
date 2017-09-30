@@ -1,0 +1,16 @@
+{
+  DB: {
+    DB_DIALECT: "mysql",
+    DB_USER: "root",
+    DB_PASSWORD: "hrmapihrmapi",
+    DB_NAME: "hrm_prod",
+    DB_HOST: "103.36.173.189",
+    DB_PORT: 3306,
+    DB_LOG: false,
+    JWT_ID: "jsonwebtoken",
+    JWT_KEY: "secretKey",
+  },
+  LOG: {
+    LEVEL: "debug",
+  }
+}

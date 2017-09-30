@@ -1,7 +1,6 @@
 {
-  "name": "nest-js-sequelize-jwt",
-  "version": "3.0.0",
-  "description": "Nest + Sequelize + jwt",
+  "name": "net-workflow",
+  "version": "1.0.0",
   "main": "src/server.ts",
   "keywords": [
     "nest",
@@ -12,21 +11,18 @@
     "node",
     "typescript",
     "jwt",
-    "jsonwebtoken",
-    "dotenv"
+    "jsonwebtoken"
   ],
   "author": {
-    "name": "Adrien de Peretti",
-    "email": "adrien.deperetti@gmail.com"
+    "name": "Hu Hui",
+    "email": "12710353@qq.com"
   },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/adrien2p/nest-js-sequelize-jwt/issues"
-  },
   "scripts": {
     "lint": "tslint -c tslint.json -p tsconfig.json -e 'node_modules/**' -e '**/*.d.ts' -e 'tests/**' --type-check --fix 'src/**/*.ts'",
     "migrate": "ts-node migrate.ts",
-    "start": "ts-node src/server.ts --env=NODE_ENV",
+    "start": "set NODE_ENV=deploy && ts-node src/server.ts",
+    "dev": "set NODE_ENV=development && ts-node src/server.ts",
     "test": "mocha -r ts-node/register src/**/tests/*.ts"
   },
   "dependencies": {

@@ -41,6 +41,7 @@ export class UsersController {
     const user = await User.findOne<User>({
       where: { id }
     });
+
     if (user) {
       return res.status(HttpStatus.OK).json(user);
     } else {
