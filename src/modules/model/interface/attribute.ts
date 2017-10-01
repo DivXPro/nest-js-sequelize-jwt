@@ -5,62 +5,62 @@ export namespace Attribute {
   }
 
   export interface Form extends Timestamps {
-    id?: string | number;
-    groupId?: string | number;
-    instanceId?: string | number;
-    form?: string | object;
-    data?: string | object;
+    id?: number;
+    groupId?: number;
+    instanceId?: number;
+    form?: object;
+    data?: object;
   }
 
   export interface BpTask extends Timestamps {
-    id?: string | number;
-    groupId?: string | number;
-    instanceId?: string | number;
-    processId?: string | number;
+    id?: number;
+    groupId?: number;
+    instanceId?: number;
+    processId?: number;
     type?: string;
-    option?: string | object;
-    userId?: string | number;
+    option?: object;
+    userId?: number;
     sequence?: number;
     state?: number;
     comment?: string;
   }
 
   export interface BpProcess extends Timestamps {
-    id?: string | number;
-    bpId?: string | number;
-    groupId?: string | number;
-    instanceId?: string | number;
+    id?: number;
+    bpId?: number;
+    groupId?: number;
+    instanceId?: number;
     type?: string;
     serial?: number;
-    userId?: string | number;
+    userId?: number;
     approveMode?: number;
     state?: number;
     option?: string;
   }
 
   export interface BpInstance extends Timestamps {
-    id?: string | number;
-    groupId?: string | number;
-    userId?: string | number;
-    modelId?: string | number;
-    model?: string | object;
+    id?: number;
+    groupId?: number;
+    userId?: number;
+    modelId?: number;
+    model?: object;
     state?: number;
-    relevanceUserId?: string | number;
+    relevanceUserId?: number;
     isDeleted?: 0 | 1;
   }
 
   export interface BpModel extends Timestamps {
-    id?: string | number;
+    id?: number;
     groupId?: number;
     workflowId?: number;
-    model?: string | object;
-    form?: string | object;
+    model?: object;
+    form?: object;
     isDeleted?: 0 | 1;
   }
 
   export interface BpWorkflow extends Timestamps {
-    id?: string | number;
-    groupId?: string | number;
+    id?: number;
+    groupId?: number;
     name?: string;
     currentVersionId?: number;
     publishVersionId?: number;
@@ -69,11 +69,11 @@ export namespace Attribute {
   }
 
   export interface Flow extends Timestamps {
-    id?: string | number;
-    bpId?: string | number;
-    groupId?: string | number;
-    instanceId?: string | number;
-    sourceRef?: string | number;
-    targetRef?: string | number;
+    id?: number;
+    bpId?: number;
+    groupId?: number;
+    instanceId?: number;
+    sourceRef?: number;
+    targetRef?: number;
   }
 }

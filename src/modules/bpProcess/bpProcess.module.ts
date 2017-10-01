@@ -5,7 +5,7 @@ import { BpProcessService } from './bpProcess.service';
 import { BpTaskModule } from '../bpTask/bpTask.module';
 
 @Module({
-    modules: [ModelModule],
+    modules: [ModelModule, BpTaskModule],
     controllers: [BpProcessController],
     components: [BpProcessService],
     exports: [BpProcessService]
