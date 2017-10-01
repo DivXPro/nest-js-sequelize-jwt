@@ -13,23 +13,23 @@ import {
 export { Request, Response } from 'express';
 import { MessageCodeError } from '../common/lib/error/MessageCodeError';
 import { sequelize } from '../common/config/dataBase';
-import { BpInstanceService } from './bpInstance.service';
+import { BpTaskService } from './bpTask.service';
 import { ModelService } from '../model/model.service';
 import { Attribute } from '../model/interface';
 
 @Controller()
-export class BpInstanceController {
-  constructor(private bpInstanceService: BpInstanceService) {}
-  @Get('instances')
+export class BpTaskController {
+  constructor(private bpInstanceService: BpTaskService) {}
+  @Get('tasks')
   public async index(@Request() req, @Response() res) {
-    const models = await this.bpInstanceService.getBpInstances();
+    const models = await this.bpTaskService.getIBpTasks();
     return res.status(HttpStatus.OK).json(models);
   }
 
-  @Get('instances/:id')
+  @Get('tasks/:id')
   public async show(@Param('id') id, @Response() res) {
     if (!id) throw new MessageCodeError('user:show:missingId');
-    const model = await this.bpInstanceService.getBpInstance(id);
+    const model = await this.bpTaskService.getBptask(id);
     if (model) {
       return res.status(HttpStatus.OK).json(model);
     } else {

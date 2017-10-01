@@ -6,30 +6,27 @@ import {
   Delete,
   HttpStatus,
   Request,
-  Response,
-  Param,
-  Body,
+  Response
 } from '@nestjs/common';
-export { Request, Response } from 'express';
 import { MessageCodeError } from '../common/lib/error/MessageCodeError';
 import { sequelize } from '../common/config/dataBase';
-import { BpInstanceService } from './bpInstance.service';
+import { bpProcessService } from './bpProcess.service';
 import { ModelService } from '../model/model.service';
 import { Attribute } from '../model/interface';
 
 @Controller()
-export class BpInstanceController {
-  constructor(private bpInstanceService: BpInstanceService) {}
-  @Get('instances')
+export class BpProcessController {
+  constructor(private bpProcessService: bpProcessService) {}
+  @Get('processes')
   public async index(@Request() req, @Response() res) {
-    const models = await this.bpInstanceService.getBpInstances();
+    const models = await this.bpProcessService.getModels();
     return res.status(HttpStatus.OK).json(models);
   }
-
-  @Get('instances/:id')
-  public async show(@Param('id') id, @Response() res) {
+  @Get('processes/:id')
+  public async show(@Request() req, @Response() res) {
+    const id = req.params.id;
     if (!id) throw new MessageCodeError('user:show:missingId');
-    const model = await this.bpInstanceService.getBpInstance(id);
+    const model = await this.bpProcessService.getModel(id);
     if (model) {
       return res.status(HttpStatus.OK).json(model);
     } else {
