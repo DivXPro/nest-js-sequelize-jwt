@@ -12,7 +12,7 @@ export namespace Attribute {
     data?: string | object;
   }
 
-  export interface Task extends Timestamps {
+  export interface BpTask extends Timestamps {
     id?: string | number;
     groupId?: string | number;
     instanceId?: string | number;
@@ -25,12 +25,11 @@ export namespace Attribute {
     comment?: string;
   }
 
-  export interface Process extends Timestamps {
+  export interface BpProcess extends Timestamps {
     id?: string | number;
     bpId?: string | number;
     groupId?: string | number;
     instanceId?: string | number;
-    parentId?: string | number;
     type?: string;
     serial?: number;
     userId?: string | number;
@@ -53,13 +52,13 @@ export namespace Attribute {
   export interface BpModel extends Timestamps {
     id?: string | number;
     groupId?: number;
-    parentId?: number;
+    workflowId?: number;
     model?: string | object;
     form?: string | object;
     isDeleted?: 0 | 1;
   }
 
-  export interface BpRelation extends Timestamps {
+  export interface BpWorkflow extends Timestamps {
     id?: string | number;
     groupId?: string | number;
     name?: string;

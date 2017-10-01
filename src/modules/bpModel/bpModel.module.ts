@@ -7,6 +7,6 @@ import { BpModelService } from './bpModel.service';
     modules: [ModelModule],
     controllers: [BpModelController],
     components: [BpModelService],
-    exports: []
+    exports: [BpModelService]
 })
 export class BpModelModule {}

@@ -9,11 +9,11 @@ import { sequelize } from './database';
 @Component()
 export class ModelService {
   public sequelize: Sequelize.Sequelize;
-  public Task: Models.Task;
-  public BpRelation: Models.BpRelation;
+  public BpTask: Models.BpTask;
+  public BpWorkflow: Models.BpWorkflow;
   public BpModel: Models.BpModel;
   public BpInstance: Models.BpInstance;
-  public Process: Models.Process;
+  public BpProcess: Models.BpProcess;
   public Form: Models.Form;
   public Flow: Models.Flow;
 
@@ -23,8 +23,8 @@ export class ModelService {
     /**
      * 审批版本关联 Model
      */
-    this.BpRelation = this.sequelize.define<Instance.BpRelation, Attribute.BpRelation>(
-      'bpRelation',
+    this.BpWorkflow = this.sequelize.define<Instance.BpWorkflow, Attribute.BpWorkflow>(
+      'bpWorkflow',
       {
         id: {
           type: DataTypes.BIGINT(14),
@@ -45,12 +45,12 @@ export class ModelService {
         },
         currentVersionId: {
           type: DataTypes.BIGINT(14),
-          field: 'current_version_id',
+          field: 'current_version_id'
         },
         publishVersionId: {
           type: DataTypes.BIGINT(14),
           field: 'publish_version_id',
-          allowNull: false,
+          allowNull: false
         },
         isDeleted: {
           type: DataTypes.BOOLEAN,
@@ -61,11 +61,12 @@ export class ModelService {
       },
       {
         freezeTableName: true,
-        tableName: 'bp_relation',
+        tableName: 'bp_workflow',
         timestamps: true,
         underscored: true
       }
     );
+
     // BpModel
     this.BpModel = this.sequelize.define<Instance.BpModel, Attribute.BpModel>(
       'bpModel',
@@ -82,9 +83,10 @@ export class ModelService {
           field: 'group_id',
           allowNull: false
         },
-        parentId: {
+        workflowId: {
           type: DataTypes.BIGINT(14),
-          field: 'parent_id',
+          field: 'workflow_id',
+          allowNull: false
         },
         model: {
           type: DataTypes.TEXT
@@ -106,9 +108,10 @@ export class ModelService {
         underscored: true
       }
     );
+
     // Instance
     this.BpInstance = this.sequelize.define<Instance.BpInstance, Attribute.BpInstance>(
-      'instance',
+      'bpInstance',
       {
         id: {
           type: DataTypes.BIGINT(14),
@@ -158,7 +161,8 @@ export class ModelService {
         timestamps: true,
         underscored: true
       }
-      );
+    );
+
     this.Flow = this.sequelize.define<Instance.Flow, Attribute.Flow>(
       'flow',
       {
@@ -202,9 +206,10 @@ export class ModelService {
         underscored: true
       }
     );
+
     // Process
-    this.Process = this.sequelize.define<Instance.Process, Attribute.Process>(
-      'process',
+    this.BpProcess = this.sequelize.define<Instance.BpProcess, Attribute.BpProcess>(
+      'bpProcess',
       {
         id: {
           type: DataTypes.BIGINT(14),
@@ -227,11 +232,6 @@ export class ModelService {
           type: DataTypes.BIGINT(14),
           field: 'instance_id',
           allowNull: false
-        },
-        parentId: {
-          type: DataTypes.BIGINT(14),
-          field: 'parent_id',
-          allowNull: true
         },
         type: {
           type: DataTypes.STRING(100),
@@ -262,9 +262,10 @@ export class ModelService {
         underscored: true
       }
     );
+
     // Task
-    this.Task = this.sequelize.define<Instance.Task, Attribute.Task>(
-      'task',
+    this.BpTask = this.sequelize.define<Instance.BpTask, Attribute.BpTask>(
+      'bPtask',
       {
         id: {
           type: DataTypes.BIGINT(14),
@@ -318,5 +319,10 @@ export class ModelService {
         underscored: true
       }
     );
+
+    this.BpWorkflow.hasMany(this.BpModel, { foreignKey: 'workflowId' });
+    this.BpModel.belongsTo(this.BpWorkflow, { foreignKey: 'workflowId' });
+    this.BpProcess.belongsTo(this.BpInstance, { foreignKey: 'instanceId' });
+    this.BpInstance.belongsTo(this.BpModel, { foreignKey: 'modelId' });
   }
 }
