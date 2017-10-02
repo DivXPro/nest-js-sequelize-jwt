@@ -188,7 +188,7 @@ export class BpProcessService {
         await this.pass(bpProcess.id, transaction);
         break;
       case PROCESS_TYPE.FUNCTION:
-        // TODO: 执行相关发FUNCTION;
+        // 激活执行相关发FUNCTION;
         await this.activeTasksOfProcess(bpProcess.id, transaction);
         await this.pass(bpProcess.id, transaction);
         break;
@@ -292,7 +292,7 @@ export class BpProcessService {
       return;
     }
     bpProcess.state = STATE.REJECT;
-    return bpProcess.save({ transaction });
+    await bpProcess.save({ transaction });
   }
 
   public async ignore (id: number, transaction?: Sequelize.Transaction);

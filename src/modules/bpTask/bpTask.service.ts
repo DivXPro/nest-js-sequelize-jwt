@@ -1,6 +1,7 @@
 import * as Sequelize from 'sequelize';
 import { Component } from '@nestjs/common';
 import { ModelService } from '../model/model.service';
+import { BpProcessService } from '../bpProcess/bpProcess.service';
 import { Attribute } from '../model/interface/attribute';
 import { Instance } from '../model/interface/instance';
 import { STATE, PROCESS_TYPE, TASK_TYPE } from '../common/enum';
@@ -9,7 +10,7 @@ const LOCK = Sequelize.Transaction.LOCK;
 
 @Component()
 export class BpTaskService {
-  constructor(private model: ModelService) {}
+  constructor(private model: ModelService, private bpProcessService: BpProcessService) {}
   public getBpTask(
     id: number,
     transaction?: Sequelize.Transaction,
@@ -39,7 +40,11 @@ export class BpTaskService {
     return this.getBpTasks(where, transaction, lock);
   }
 
-  public async doFunction() {
+  public async doFunction(task: Instance.BpTask) {
+    // TODO:
+  }
+
+  public async doApi(task: Instance.BpTask) {
     // TODO:
   }
 
@@ -56,7 +61,14 @@ export class BpTaskService {
       return;
     }
     switch (bpTask.type) {
+      case TASK_TYPE.API:
+        await this.doApi(bpTask);
+        await this.pass(bpTask, transaction);
+        break;
       case TASK_TYPE.FUNCTION:
+        await this.doFunction(bpTask);
+        await this.pass(bpTask, transaction);
+        break;
       case TASK_TYPE.USERTASK:
         bpTask.state = STATE.ACTIVE;
         await bpTask.save({ transaction });
@@ -81,7 +93,10 @@ export class BpTaskService {
       return;
     }
     bpTask.state = STATE.PASS;
-    return bpTask.save({ transaction });
+    await bpTask.save({ transaction });
+    if (bpTask.processId) {
+      return this.bpProcessService.check(bpTask.processId, transaction);
+    }
   }
 
   public async reject(
@@ -97,7 +112,10 @@ export class BpTaskService {
       return;
     }
     bpTask.state = STATE.REJECT;
-    return bpTask.save({ transaction });
+    await bpTask.save({ transaction });
+    if (bpTask.processId) {
+      return this.bpProcessService.check(bpTask.processId, transaction);
+    }
   }
 
   public async ignore(

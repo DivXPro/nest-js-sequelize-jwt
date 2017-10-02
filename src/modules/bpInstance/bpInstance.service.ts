@@ -40,7 +40,7 @@ export class BpInstanceService {
     if (bpInstance.state === STATE.INIT) {
       bpInstance.state = STATE.ACTIVE;
       await bpInstance.save({ transaction });
-      // TODO: 激活 STARTEVENT
+      // 激活 STARTEVENT
       const startEvent = await this.bpProcessService.getStartEvent(bpInstance.id, transaction, LOCK.UPDATE);
       if (startEvent == null) {
         // TODO: throw error
@@ -51,4 +51,50 @@ export class BpInstanceService {
       // TODO: throw error
     }
   }
+
+  public async pass(id: number, transaction: Sequelize.Transaction) {
+    const bpInstance = await this.getBpInstance(id, transaction, LOCK.UPDATE);
+    if (bpInstance == null || bpInstance.id == null) {
+      // TODO: throw error
+      return;
+    }
+    if (bpInstance.state === STATE.ACTIVE) {
+      bpInstance.state = STATE.PASS;
+      await bpInstance.save({ transaction });
+      // TODO: ingore 未完成的process
+    } else {
+      // TODO: throw error
+    }
+  }
+
+  public async reject(id: number, transaction: Sequelize.Transaction) {
+    const bpInstance = await this.getBpInstance(id, transaction, LOCK.UPDATE);
+    if (bpInstance == null || bpInstance.id == null) {
+      // TODO: throw error
+      return;
+    }
+    if (bpInstance.state === STATE.ACTIVE) {
+      bpInstance.state = STATE.REJECT;
+      await bpInstance.save({ transaction });
+      // TODO: ingore 未完成的process
+    } else {
+      // TODO: throw error
+    }
+  }
+
+  public async ignore(id: number, transaction: Sequelize.Transaction) {
+    const bpInstance = await this.getBpInstance(id, transaction, LOCK.UPDATE);
+    if (bpInstance == null || bpInstance.id == null) {
+      // TODO: throw error
+      return;
+    }
+    if (bpInstance.state === STATE.ACTIVE) {
+      bpInstance.state = STATE.IGNORE;
+      await bpInstance.save({ transaction });
+      // TODO: ingore 未完成的process
+    } else {
+      // TODO: throw error
+    }
+  }
+
 }
