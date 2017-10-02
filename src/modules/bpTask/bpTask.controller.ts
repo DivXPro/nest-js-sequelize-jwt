@@ -19,17 +19,17 @@ import { Attribute } from '../model/interface';
 
 @Controller()
 export class BpTaskController {
-  constructor(private bpInstanceService: BpTaskService) {}
+  constructor(private bpTaskService: BpTaskService, private bpInstanceService: BpTaskService) {}
   @Get('tasks')
   public async index(@Request() req, @Response() res) {
-    const models = await this.bpTaskService.getIBpTasks();
+    const models = await this.bpTaskService.getBpTasks({});
     return res.status(HttpStatus.OK).json(models);
   }
 
   @Get('tasks/:id')
   public async show(@Param('id') id, @Response() res) {
     if (!id) throw new MessageCodeError('user:show:missingId');
-    const model = await this.bpTaskService.getBptask(id);
+    const model = await this.bpTaskService.getBpTask(id);
     if (model) {
       return res.status(HttpStatus.OK).json(model);
     } else {

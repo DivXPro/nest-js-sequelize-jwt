@@ -31,6 +31,18 @@ export class BpTaskService {
     });
   }
 
+  public createTask(task: Attribute.BpTask, transaction?: Sequelize.Transaction) {
+    return this.model.BpTask.create(task, {
+      transaction,
+    });
+  }
+
+  public createTasks(tasks: Attribute.BpTask[], transaction?: Sequelize.Transaction) {
+    return this.model.BpTask.bulkCreate(tasks, {
+      transaction,
+    });
+  }
+
   public getBpTasksOfProcess(
     processId: number,
     transaction?: Sequelize.Transaction,

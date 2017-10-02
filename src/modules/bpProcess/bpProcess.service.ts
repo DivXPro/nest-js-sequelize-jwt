@@ -53,6 +53,17 @@ export class BpProcessService {
     });
   }
 
+  public getEndEvent(instanceId: number, transaction?: Sequelize.Transaction, lock?: Sequelize.TransactionLockLevel) {
+    return this.model.BpProcess.findOne({
+      where: {
+        instanceId,
+        type: PROCESS_TYPE.ENDEVENT,
+      },
+      transaction,
+      lock,
+    });
+  }
+
   /**
    * 判断process状态该如何转变
    */
@@ -73,17 +84,32 @@ export class BpProcessService {
       case PROCESS_TYPE.USERTASK:
         await this.checkUserTasks(bpProcess, transaction);
         break;
-      case PROCESS_TYPE.ENDEVENT:
-        // TODO:
-        break;
       case PROCESS_TYPE.API:
-        // TODO:
-        break;
+      case PROCESS_TYPE.FUNCTION:
+      case PROCESS_TYPE.ENDEVENT:
       default:
+        await this.checkTask(bpProcess, transaction);
         break;
     }
   }
 
+  public async checkTask(process: number | Instance.BpProcess, transaction: Sequelize.Transaction) {
+    const bpProcess = typeof process === 'number'
+      ? await this.getBpProcess(process, transaction, LOCK.UPDATE)
+      : process;
+    if (bpProcess == null || bpProcess.id == null) {
+      // TODO: throw error;
+      return;
+    }
+    const tasks = await this.bpTaskService.getBpTasksOfProcess(bpProcess.id, transaction);
+    const passed = _.filter(tasks, task => task.state === STATE.PASS);
+    if (passed.length === tasks.length) {
+      return this.pass(bpProcess, transaction);
+    }
+  }
+  /**
+   * 检查用户任务执行情况
+   */
   public async checkUserTasks(process: number | Instance.BpProcess, transaction: Sequelize.Transaction) {
     const bpProcess = typeof process === 'number'
       ? await this.getBpProcess(process, transaction, LOCK.UPDATE)
@@ -188,22 +214,43 @@ export class BpProcessService {
         await this.pass(bpProcess.id, transaction);
         break;
       case PROCESS_TYPE.FUNCTION:
-        // 激活执行相关发FUNCTION;
-        await this.activeTasksOfProcess(bpProcess.id, transaction);
-        await this.pass(bpProcess.id, transaction);
-        break;
       case PROCESS_TYPE.USERTASK:
-        await this.activeTasksOfProcess(bpProcess.id, transaction);
-        await bpProcess.save({ transaction });
-        break;
       case PROCESS_TYPE.ENDEVENT:
-        // TODO: 执行相关发FUNCTION;
-        await this.pass(bpProcess.id, transaction);
-        break;
       default:
-        await this.pass(bpProcess.id, transaction);
+        bpProcess.state = STATE.ACTIVE;
+        await bpProcess.save({ transaction });
+        await this.activeTasksOfProcess(bpProcess.id, transaction);
         break;
     }
+  }
+
+  private async ignoreTasksOfProcess(
+    process: number | Instance.BpProcess,
+    transaction: Sequelize.Transaction
+  ) {
+    const bpProcess =
+      typeof process === 'number'
+        ? await this.getBpProcess(process, transaction, LOCK.UPDATE)
+        : process;
+    if (bpProcess == null || bpProcess.id == null) {
+      // TODO: throw error;
+      return;
+    }
+    let tasks = await this.bpTaskService.getBpTasksOfProcess(
+      bpProcess.id,
+      transaction,
+      LOCK.UPDATE
+    );
+    const activeTasks = _(tasks)
+      .filter(
+        task =>
+          task.state === STATE.INIT && bpProcess.serial
+            ? task.sequence === 1
+            : true
+      )
+      .map(task => this.bpTaskService.ignore(task, transaction))
+      .value();
+    await Promise.all(activeTasks);
   }
 
   private async activeTasksOfProcess(
@@ -220,12 +267,10 @@ export class BpProcessService {
     }
     switch (bpProcess.type) {
       case PROCESS_TYPE.API:
-        // TODO: 调用API
-        break;
       case PROCESS_TYPE.FUNCTION:
-        // TODO: 调用内部函数
-        break;
       case PROCESS_TYPE.USERTASK:
+      case PROCESS_TYPE.ENDEVENT:
+      default:
         let tasks = await this.bpTaskService.getBpTasksOfProcess(
           bpProcess.id,
           transaction,
@@ -242,16 +287,14 @@ export class BpProcessService {
           .value();
         await Promise.all(activeTasks);
         break;
-      default:
-        break;
     }
   }
 
-  public async pass (id: number, transaction?: Sequelize.Transaction);
-  public async pass (process: Instance.BpProcess, transaction?: Sequelize.Transaction);
+  public async pass (id: number, transaction: Sequelize.Transaction);
+  public async pass (process: Instance.BpProcess, transaction: Sequelize.Transaction);
   public async pass(
-    process?: number | Instance.BpProcess,
-    transaction?: Sequelize.Transaction
+    process: number | Instance.BpProcess,
+    transaction: Sequelize.Transaction
   ) {
     const bpProcess =
       typeof process === 'number'
@@ -267,17 +310,15 @@ export class BpProcessService {
     }
     bpProcess.state = STATE.PASS;
     await bpProcess.save({ transaction });
-    if (bpProcess.type === PROCESS_TYPE.ENDEVENT) {
-      // TODO: pass Instance
-    }
-    // TODO: activeNext
+    // activeNext
+    await this.activeNext(bpProcess, transaction);
   }
 
   public async reject (id: number, transaction?: Sequelize.Transaction);
   public async reject (process: Instance.BpProcess, transaction?: Sequelize.Transaction);
   public async reject(
-    process?: number | Instance.BpProcess,
-    transaction?: Sequelize.Transaction
+    process: number | Instance.BpProcess,
+    transaction: Sequelize.Transaction
   ) {
     const bpProcess =
       typeof process === 'number'
@@ -293,13 +334,16 @@ export class BpProcessService {
     }
     bpProcess.state = STATE.REJECT;
     await bpProcess.save({ transaction });
+    // ignore 当前process中还未执行的 task
+    await this.ignoreTasksOfProcess(bpProcess, transaction);
+    // TODO: 判断instance是否陷入死局
   }
 
-  public async ignore (id: number, transaction?: Sequelize.Transaction);
-  public async ignore (process: Instance.BpProcess, transaction?: Sequelize.Transaction);
+  public async ignore (id: number, transaction: Sequelize.Transaction);
+  public async ignore (process: Instance.BpProcess, transaction: Sequelize.Transaction);
   public async ignore(
-    process?: number | Instance.BpProcess,
-    transaction?: Sequelize.Transaction
+    process: number | Instance.BpProcess,
+    transaction: Sequelize.Transaction
   ) {
     const bpProcess =
       typeof process === 'number'
@@ -314,7 +358,10 @@ export class BpProcessService {
       return;
     }
     bpProcess.state = STATE.IGNORE;
-    return bpProcess.save({ transaction });
+    await bpProcess.save({ transaction });
+    // ignore 当前process中还未执行的 task
+    await this.ignoreTasksOfProcess(bpProcess, transaction);
+    // TODO: 判断instance是否陷入死局
   }
 
   public async getNextFlows(id: number, transaction?: Sequelize.Transaction): Promise<BpmnFlow[]>;
@@ -355,6 +402,9 @@ export class BpProcessService {
     }, transaction, LOCK.UPDATE);
   }
 
+  /**
+   * 激活下一环节process
+   */
   public async activeNext(id: number, transaction: Sequelize.Transaction);
   public async activeNext(process: Instance.BpProcess, transaction: Sequelize.Transaction);
   public async activeNext(
@@ -366,9 +416,72 @@ export class BpProcessService {
       // TODO: throw error;
       return;
     }
+    if (bpProcess.type === PROCESS_TYPE.ENDEVENT) {
+      return this.bpInstanceService.pass(bpProcess.instanceId, transaction);
+    }
     const nextBpProcesses = await this.getNextProcesses(bpProcess, transaction);
     for (const nextProcess of nextBpProcesses) {
       await this.active(nextProcess, transaction);
     }
   }
+
+  // 创建Process下的 task
+  public async makeTasks(id: number, tasks: Attribute.BpTask[], transaction?: Sequelize.Transaction);
+  public async makeTasks(process: Instance.BpProcess, tasks: Attribute.BpTask[], transaction?: Sequelize.Transaction);
+  public async makeTasks(process: number | Instance.BpProcess, tasks: Attribute.BpTask[], transaction?: Sequelize.Transaction) {
+    const bpProcess = typeof process === 'number' ? await this.getBpProcess(process) : process;
+    if (bpProcess == null || bpProcess.instanceId == null || !bpProcess.id) {
+      // TODO: throw error;
+      return;
+    }
+    switch (bpProcess.type) {
+      case PROCESS_TYPE.USERTASK:
+        return this.makeUserTasks(bpProcess, tasks, transaction);
+      case PROCESS_TYPE.FUNCTION:
+        return this.makeFunctionTasks(bpProcess, transaction);
+      case PROCESS_TYPE.REJECTEVENT:
+        return this.makeFunctionTasks(bpProcess, transaction);
+      case PROCESS_TYPE.ENDEVENT:
+        return this.makeFunctionTasks(bpProcess, transaction);
+      default:
+        break;
+    }
+  }
+
+  /**
+   * 创建process下的用户审批任务
+   */
+  public makeUserTasks(process: Instance.BpProcess, tasks: Attribute.BpTask[], transaction?: Sequelize.Transaction) {
+    const bpProcess = process;
+    const bpTasks = _.map(tasks, task => {
+      return {
+        groupId: bpProcess.groupId,
+        instanceId: bpProcess.instanceId,
+        processId: bpProcess.id,
+        type: TASK_TYPE.USERTASK,
+        userId: task.userId,
+        sequence: task.sequence,
+        state: task.state || STATE.INIT,
+      };
+    });
+    // TODO create tasks
+  }
+
+  /**
+   * 创建process下的内部function任务
+   * @param option 任务选项
+   * @param t 事务实例
+   */
+  public makeFunctionTasks(option, t?: sequelize.Transaction) {
+    const task = new Task({
+      groupId: this.modelInstance.groupId,
+      instanceId: this.modelInstance.instanceId,
+      processId: this.modelInstance.id,
+      type: Task.TYPE.FUNCTION,
+      option,
+      state: Task.STATE.INIT
+    });
+    return task.save(null, t);
+  }
+
 }
