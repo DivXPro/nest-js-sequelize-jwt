@@ -1,3 +1,4 @@
+import * as Sequelize from 'sequelize';
 import {
   Controller,
   Get,
@@ -22,7 +23,8 @@ export class BpInstanceController {
   constructor(private bpInstanceService: BpInstanceService) {}
   @Get('instances')
   public async index(@Request() req, @Response() res) {
-    const models = await this.bpInstanceService.getBpInstances();
+    const where = {} as Sequelize.AnyWhereOptions;
+    const models = await this.bpInstanceService.getBpInstances(where);
     return res.status(HttpStatus.OK).json(models);
   }
 

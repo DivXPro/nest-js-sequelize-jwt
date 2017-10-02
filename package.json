@@ -43,7 +43,6 @@
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.4.3",
     "sequelize": "^4.10.3",
-    "sequelize-typescript": "^0.5.0",
     "typescript": "^2.5.2",
     "umzug": "^2.0.1"
   },

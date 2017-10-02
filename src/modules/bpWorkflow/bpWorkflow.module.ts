@@ -3,10 +3,10 @@ import { ModelModule } from '../model/model.module';
 import { BpWorkflowController } from './bpWorkflow.controller';
 import { BpWorkflowService } from './bpWorkflow.service';
 import { BpModelModule } from '../bpModel/bpModel.module';
-import { BpInstancelModule } from '../bpInstance/bpInstance.module';
+import { BpInstanceModule } from '../bpInstance/bpInstance.module';
 
 @Module({
-    modules: [ModelModule, BpModelModule, BpInstancelModule],
+    modules: [ModelModule, BpModelModule, BpInstanceModule],
     controllers: [BpWorkflowController],
     components: [BpWorkflowService],
     exports: [BpWorkflowService]

@@ -87,5 +87,11 @@ export const errorMessagesConfig: { [messageCode: string]: IErrorMessages } = {
         httpStatus: HttpStatus.BAD_REQUEST,
         errorMessage: 'Unable to connect the user without password.',
         userMessage: 'Veuillez indiquer votre mot de passe.'
+    },
+    'bpInstance:create:invalidModel': {
+        type: 'BadRequest',
+        httpStatus: HttpStatus.BAD_REQUEST,
+        errorMessage: 'The model is invalid to create instance.',
+        userMessage: 'Veuillez indiquer votre mot de passe.'
     }
 };

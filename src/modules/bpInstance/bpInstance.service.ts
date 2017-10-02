@@ -1,21 +1,29 @@
 import * as Sequelize from 'sequelize';
 import { Component } from '@nestjs/common';
 import { ModelService } from '../model/model.service';
+import { BpProcessService } from '../bpProcess/bpProcess.service';
 import { Attribute } from '../model/interface/attribute';
 import { Instance } from '../model/interface/instance';
 import { SQL } from '../common/sql';
 import { STATE } from '../common/enum';
 
+const LOCK = Sequelize.Transaction.LOCK;
+
 @Component()
 export class BpInstanceService {
-  constructor(private model: ModelService) {}
-  public getBpInstance(id: number) {
-    return this.model.BpInstance.findById(id);
+  constructor(private model: ModelService, private bpProcessService: BpProcessService) {}
+  public getBpInstance(id: number, transaction?: Sequelize.Transaction, lock?: Sequelize.TransactionLockLevel) {
+    return this.model.BpInstance.findById(id, {
+      transaction,
+      lock,
+    });
   }
 
-  public getBpInstances(where?: Sequelize.where) {
+  public getBpInstances(where: Sequelize.AnyWhereOptions, transaction?: Sequelize.Transaction, lock?: Sequelize.TransactionLockLevel) {
     return this.model.BpInstance.findAll({
       where,
+      transaction,
+      lock,
     });
   }
 
@@ -23,45 +31,24 @@ export class BpInstanceService {
     return this.model.BpInstance.create(bpInstance);
   }
 
-  private async occupyBpInstance(id: number, transaction: Sequelize.Transaction) {
-    const query = await this.model.sequelize.query(SQL.GET_INSTANCE, {
-      replacements: {
-        id,
-      },
-      transaction,
-      type: this.model.sequelize.QueryTypes.SELECT,
-      model: this.model.BpInstance,
-    });
-    return query[0] as Instance.BpInstance;
-  }
-
-  public async realActive(id: number) {
-    const transaction = await this.model.sequelize.transaction();
-    try {
-      await this.active(id, transaction);
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-    }
-  }
-
   public async active(id: number, transaction: Sequelize.Transaction) {
-    const bpInstance = await this.occupyBpInstance(id, transaction);
+    const bpInstance = await this.getBpInstance(id, transaction, LOCK.UPDATE);
+    if (bpInstance == null || bpInstance.id == null) {
+      // TODO: throw error
+      return;
+    }
     if (bpInstance.state === STATE.INIT) {
       bpInstance.state = STATE.ACTIVE;
       await bpInstance.save({ transaction });
-      // const start = await this.model.Process.findOne({
-      //   where: {
-      //     instanceId: this.modelInstance.id,
-      //     type: Process.TYPE.STARTEVENT
-      //   },
-      //   transaction,
-      // });
-      // if (start == null) {
-      //   throw Error('cant active: no process');
-      // }
-      // const startProcess = new Process(null, this.model);
-      // startProcess.loadInstance(start);
-      // await startProcess.active(transaction);
+      // TODO: 激活 STARTEVENT
+      const startEvent = await this.bpProcessService.getStartEvent(bpInstance.id, transaction, LOCK.UPDATE);
+      if (startEvent == null) {
+        // TODO: throw error
+        return;
+      }
+      return this.bpProcessService.active(startEvent, transaction);
+    } else {
+      // TODO: throw error
+    }
   }
 }

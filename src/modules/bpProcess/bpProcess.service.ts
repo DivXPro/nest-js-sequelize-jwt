@@ -42,6 +42,17 @@ export class BpProcessService {
     });
   }
 
+  public getStartEvent(instanceId: number, transaction?: Sequelize.Transaction, lock?: Sequelize.TransactionLockLevel) {
+    return this.model.BpProcess.findOne({
+      where: {
+        instanceId,
+        type: PROCESS_TYPE.STARTEVENT,
+      },
+      transaction,
+      lock,
+    });
+  }
+
   /**
    * 判断process状态该如何转变
    */
@@ -90,7 +101,8 @@ export class BpProcessService {
           return this.pass(bpProcess, transaction);
         } else if (_.findIndex(tasks, task => task.state === STATE.REJECT) > -1) {
           // 如果有一个task被驳回则驳回该process
-          // TODO: 将未完成的task ignore
+          // 将未完成的task ignore
+          await this.ignoreTasks(tasks, transaction);
           return this.reject(bpProcess, transaction);
         } else if (bpProcess.serial) {
           // 如果未有驳回且没全部完成审批，且为顺序审批则激活剩余的task
@@ -105,20 +117,24 @@ export class BpProcessService {
       // 1票通过 1票拒绝
       case APPROVE_MODE.ONE_PASS:
         if (_.findIndex(tasks, task => task.state === STATE.REJECT) > -1) {
-          // TODO: 将未完成的task ignore
+          // 将未完成的task ignore
+          await this.ignoreTasks(tasks, transaction);
           await this.reject(bpProcess, transaction);
         } else if (_.findIndex(tasks, task => task.state === STATE.PASS) > -1) {
-          // TODO: 将未完成的task ignore
+          // 将未完成的task ignore
+          this.ignoreTasks(tasks, transaction);
           await this.pass(bpProcess, transaction);
         }
         break;
       // 1票通过 全票拒绝
       case APPROVE_MODE.ALL_REJECT:
         if (_.every(tasks, ['state', STATE.REJECT])) {
-          // TODO: 将未完成的task ignore
+          // 将未完成的task ignore
+          await this.ignoreTasks(tasks, transaction);
           await this.reject(bpProcess, transaction);
         } else if (_.findIndex(tasks, task => task.state === STATE.PASS) > -1) {
-          // TODO: 将未完成的task ignore
+          // 将未完成的task ignore
+          await this.ignoreTasks(tasks, transaction);
           await this.pass(bpProcess, transaction);
         } else if (bpProcess.serial) {
           const nextTask = _(tasks)
@@ -134,6 +150,15 @@ export class BpProcessService {
     }
   }
 
+  private async ignoreTasks(tasks: Instance.BpTask[], transaction: Sequelize.Transaction) {
+    const ignores = _(tasks)
+      .filter(task => task.state === STATE.ACTIVE || task.state === STATE.INIT)
+      .map(task => {
+        return this.bpTaskService.ignore(task, transaction);
+      }).value();
+    return Promise.all(ignores);
+  }
+
   public async active(
     process: number | Instance.BpProcess,
     transaction: Sequelize.Transaction
@@ -143,6 +168,10 @@ export class BpProcessService {
         ? await this.getBpProcess(process, transaction)
         : process;
     if (bpProcess === null || bpProcess.id == null) {
+      // TODO: throw error
+      return;
+    }
+    if (bpProcess.state !== STATE.INIT) {
       // TODO: throw error
       return;
     }
@@ -232,6 +261,10 @@ export class BpProcessService {
       // TODO: throw error;
       return;
     }
+    if (bpProcess.state !== STATE.INIT && bpProcess.state !== STATE.ACTIVE) {
+      // TODO: throw error;
+      return;
+    }
     bpProcess.state = STATE.PASS;
     await bpProcess.save({ transaction });
     if (bpProcess.type === PROCESS_TYPE.ENDEVENT) {
@@ -254,6 +287,10 @@ export class BpProcessService {
       // TODO: throw error;
       return;
     }
+    if (bpProcess.state !== STATE.INIT && bpProcess.state !== STATE.ACTIVE) {
+      // TODO: throw error;
+      return;
+    }
     bpProcess.state = STATE.REJECT;
     return bpProcess.save({ transaction });
   }
@@ -269,6 +306,10 @@ export class BpProcessService {
         ? await this.getBpProcess(process, transaction, LOCK.UPDATE)
         : process;
     if (bpProcess == null) {
+      // TODO: throw error;
+      return;
+    }
+    if (bpProcess.state !== STATE.INIT && bpProcess.state !== STATE.ACTIVE) {
       // TODO: throw error;
       return;
     }
