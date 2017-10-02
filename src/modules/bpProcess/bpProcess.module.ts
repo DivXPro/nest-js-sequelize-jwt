@@ -3,6 +3,7 @@ import { ModelModule } from '../model/model.module';
 import { BpProcessController } from './bpProcess.controller';
 import { BpProcessService } from './bpProcess.service';
 import { BpTaskModule } from '../bpTask/bpTask.module';
+import { BpInstanceModule } from '../bpInstance/bpInstance.module';
 
 @Module({
     modules: [ModelModule, BpTaskModule],

@@ -27,7 +27,7 @@ export namespace Attribute {
 
   export interface BpProcess extends Timestamps {
     id?: number;
-    bpId?: number;
+    bpId?: string;
     groupId?: number;
     instanceId?: number;
     type?: string;

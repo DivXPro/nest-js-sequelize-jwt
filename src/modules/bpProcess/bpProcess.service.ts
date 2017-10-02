@@ -4,9 +4,11 @@ import { Component } from '@nestjs/common';
 import { sequelize } from '../common/config/dataBase';
 import { ModelService } from '../model/model.service';
 import { BpTaskService } from '../bpTask/bpTask.service';
+import { BpInstanceService } from '../bpInstance/bpInstance.service';
 import { Attribute } from '../model/interface/attribute';
 import { Instance } from '../model/interface/instance';
-import { STATE, PROCESS_TYPE, TASK_TYPE } from '../common/enum';
+import { Bpmn, BpmnFlow } from '../interface';
+import { STATE, PROCESS_TYPE, TASK_TYPE, APPROVE_MODE } from '../common/enum';
 
 const LOCK = Sequelize.Transaction.LOCK;
 
@@ -14,7 +16,8 @@ const LOCK = Sequelize.Transaction.LOCK;
 export class BpProcessService {
   constructor(
     private model: ModelService,
-    private bpTaskService: BpTaskService
+    private bpTaskService: BpTaskService,
+    private bpInstanceService: BpInstanceService,
   ) {}
   public getBpProcess(
     id: number,
@@ -28,7 +31,7 @@ export class BpProcessService {
   }
 
   public getBpProcesses(
-    where: Sequelize.where,
+    where: Sequelize.AnyWhereOptions,
     transaction?: Sequelize.Transaction,
     lock?: Sequelize.TransactionLockLevel
   ) {
@@ -37,6 +40,98 @@ export class BpProcessService {
       transaction,
       lock
     });
+  }
+
+  /**
+   * 判断process状态该如何转变
+   */
+  public async check (id: number, transaction?: Sequelize.Transaction);
+  public async check (process: Instance.BpProcess, transaction?: Sequelize.Transaction);
+  public async check(
+    process: number | Instance.BpProcess,
+    transaction: Sequelize.Transaction
+  ) {
+    const bpProcess = typeof process === 'number'
+      ? await this.getBpProcess(process, transaction, LOCK.UPDATE)
+      : process;
+    if (bpProcess == null) {
+      // TODO: throw error;
+      return;
+    }
+    switch (bpProcess.type) {
+      case PROCESS_TYPE.USERTASK:
+        await this.checkUserTasks(bpProcess, transaction);
+        break;
+      case PROCESS_TYPE.ENDEVENT:
+        // TODO:
+        break;
+      case PROCESS_TYPE.API:
+        // TODO:
+        break;
+      default:
+        break;
+    }
+  }
+
+  public async checkUserTasks(process: number | Instance.BpProcess, transaction: Sequelize.Transaction) {
+    const bpProcess = typeof process === 'number'
+      ? await this.getBpProcess(process, transaction, LOCK.UPDATE)
+      : process;
+    if (bpProcess == null || bpProcess.id == null) {
+      // TODO: throw error;
+      return;
+    }
+    const tasks = await this.bpTaskService.getBpTasksOfProcess(bpProcess.id, transaction);
+    switch (bpProcess.approveMode) {
+      // 全票通过模式
+      case APPROVE_MODE.ALL_PASS:
+        if (_.every(tasks, ['state', STATE.PASS])) {
+          // 全部task都已经通过则自动通过该process
+          return this.pass(bpProcess, transaction);
+        } else if (_.findIndex(tasks, task => task.state === STATE.REJECT) > -1) {
+          // 如果有一个task被驳回则驳回该process
+          // TODO: 将未完成的task ignore
+          return this.reject(bpProcess, transaction);
+        } else if (bpProcess.serial) {
+          // 如果未有驳回且没全部完成审批，且为顺序审批则激活剩余的task
+          const nextTask = _(tasks)
+            .filter(task => task.state === STATE.INIT)
+            .minBy(task => task.sequence);
+          if (nextTask) {
+            await this.bpTaskService.active(nextTask, transaction);
+          }
+        }
+        break;
+      // 1票通过 1票拒绝
+      case APPROVE_MODE.ONE_PASS:
+        if (_.findIndex(tasks, task => task.state === STATE.REJECT) > -1) {
+          // TODO: 将未完成的task ignore
+          await this.reject(bpProcess, transaction);
+        } else if (_.findIndex(tasks, task => task.state === STATE.PASS) > -1) {
+          // TODO: 将未完成的task ignore
+          await this.pass(bpProcess, transaction);
+        }
+        break;
+      // 1票通过 全票拒绝
+      case APPROVE_MODE.ALL_REJECT:
+        if (_.every(tasks, ['state', STATE.REJECT])) {
+          // TODO: 将未完成的task ignore
+          await this.reject(bpProcess, transaction);
+        } else if (_.findIndex(tasks, task => task.state === STATE.PASS) > -1) {
+          // TODO: 将未完成的task ignore
+          await this.pass(bpProcess, transaction);
+        } else if (bpProcess.serial) {
+          const nextTask = _(tasks)
+            .filter(task => task.state === STATE.INIT)
+            .maxBy(task => task.sequence);
+          if (nextTask) {
+            await this.bpTaskService.active(nextTask, transaction);
+          }
+        }
+        break;
+      default:
+        throw Error('cant check');
+    }
   }
 
   public async active(
@@ -96,8 +191,10 @@ export class BpProcessService {
     }
     switch (bpProcess.type) {
       case PROCESS_TYPE.API:
+        // TODO: 调用API
         break;
       case PROCESS_TYPE.FUNCTION:
+        // TODO: 调用内部函数
         break;
       case PROCESS_TYPE.USERTASK:
         let tasks = await this.bpTaskService.getBpTasksOfProcess(
@@ -121,9 +218,11 @@ export class BpProcessService {
     }
   }
 
+  public async pass (id: number, transaction?: Sequelize.Transaction);
+  public async pass (process: Instance.BpProcess, transaction?: Sequelize.Transaction);
   public async pass(
-    process: number | Instance.BpProcess,
-    transaction: Sequelize.Transaction
+    process?: number | Instance.BpProcess,
+    transaction?: Sequelize.Transaction
   ) {
     const bpProcess =
       typeof process === 'number'
@@ -141,9 +240,11 @@ export class BpProcessService {
     // TODO: activeNext
   }
 
+  public async reject (id: number, transaction?: Sequelize.Transaction);
+  public async reject (process: Instance.BpProcess, transaction?: Sequelize.Transaction);
   public async reject(
-    process: number | Instance.BpProcess,
-    transaction: Sequelize.Transaction
+    process?: number | Instance.BpProcess,
+    transaction?: Sequelize.Transaction
   ) {
     const bpProcess =
       typeof process === 'number'
@@ -154,12 +255,14 @@ export class BpProcessService {
       return;
     }
     bpProcess.state = STATE.REJECT;
-    bpProcess.save({ transaction });
+    return bpProcess.save({ transaction });
   }
 
+  public async ignore (id: number, transaction?: Sequelize.Transaction);
+  public async ignore (process: Instance.BpProcess, transaction?: Sequelize.Transaction);
   public async ignore(
-    process: number | Instance.BpProcess,
-    transaction: Sequelize.Transaction
+    process?: number | Instance.BpProcess,
+    transaction?: Sequelize.Transaction
   ) {
     const bpProcess =
       typeof process === 'number'
@@ -170,13 +273,61 @@ export class BpProcessService {
       return;
     }
     bpProcess.state = STATE.IGNORE;
-    bpProcess.save({ transaction });
+    return bpProcess.save({ transaction });
   }
 
+  public async getNextFlows(id: number, transaction?: Sequelize.Transaction): Promise<BpmnFlow[]>;
+  public async getNextFlows(process: Instance.BpProcess, transaction?: Sequelize.Transaction): Promise<BpmnFlow[]>;
+  public async getNextFlows(process: number | Instance.BpProcess, transaction?: Sequelize.Transaction) {
+    // const bpInstance = await this.getBpInstance();
+    const bpProcess = typeof process === 'number' ? await this.getBpProcess(process) : process;
+    if (bpProcess == null || bpProcess.instanceId == null) {
+      // TODO: throw error;
+      throw Error();
+    }
+    const bpInstance = await this.bpInstanceService.getBpInstance(bpProcess.instanceId);
+    if (bpInstance == null || bpInstance.model == null) {
+      // TODO: throw error;
+      throw Error();
+    }
+    const bpmn = JSON.parse(bpInstance.model.toString()) as Bpmn;
+    return _.filter(
+      bpmn.sequenceFlow,
+      flow => flow.sourceRef === bpProcess.bpId
+    );
+  }
+
+  public async getNextProcesses(id: number, transaction: Sequelize.Transaction);
+  public async getNextProcesses(process: Instance.BpProcess, transaction: Sequelize.Transaction);
+  public async getNextProcesses(process: number | Instance.BpProcess, transaction: Sequelize.Transaction) {
+    const bpProcess = typeof process === 'number' ? await this.getBpProcess(process) : process;
+    if (bpProcess == null || bpProcess.instanceId == null) {
+      // TODO: throw error;
+      return;
+    }
+    const nextFlows = await this.getNextFlows(bpProcess, transaction);
+    return this.getBpProcesses({
+      instanceId: bpProcess.instanceId,
+      bpId: {
+        $in: _.map(nextFlows, flow => flow.targetRef),
+      },
+    }, transaction, LOCK.UPDATE);
+  }
+
+  public async activeNext(id: number, transaction: Sequelize.Transaction);
+  public async activeNext(process: Instance.BpProcess, transaction: Sequelize.Transaction);
   public async activeNext(
-    currentId: number,
+    process: number | Instance.BpProcess,
     transaction: Sequelize.Transaction
   ) {
-    const nextBpProcess = await this.getBpProcess(currentId, transaction, LOCK.UPDATE);
+    const bpProcess = typeof process === 'number' ? await this.getBpProcess(process) : process;
+    if (bpProcess == null || bpProcess.instanceId == null) {
+      // TODO: throw error;
+      return;
+    }
+    const nextBpProcesses = await this.getNextProcesses(bpProcess, transaction);
+    for (const nextProcess of nextBpProcesses) {
+      await this.active(nextProcess, transaction);
+    }
   }
 }

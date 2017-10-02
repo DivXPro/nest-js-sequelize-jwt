@@ -9,4 +9,4 @@ import { BpInstanceService } from './bpInstance.service';
     components: [BpInstanceService],
     exports: [BpInstanceService]
 })
-export class BpInstancelModule {}
+export class BpInstanceModule {}
