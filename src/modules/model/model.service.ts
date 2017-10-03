@@ -105,7 +105,48 @@ export class ModelService {
         freezeTableName: true,
         tableName: 'bp_model',
         timestamps: true,
-        underscored: true
+        underscored: true,
+        hooks: {
+          afterFind: (bpModel: Attribute.BpModel | Attribute.BpModel[]) => {
+            if (Array.isArray(bpModel)) {
+              for (const i in bpModel) {
+                bpModel[i].model = JSON.parse(<string>bpModel[i].model);
+                bpModel[i].form = JSON.parse(<string>bpModel[i].form);
+              }
+            } else {
+              bpModel.model = JSON.parse(<string>bpModel.model);
+              bpModel.form = JSON.parse(<string>bpModel.form);
+            }
+          },
+          beforeCreate: (bpModel: Attribute.BpModel) => {
+            bpModel.model = typeof bpModel.model === 'object' ? JSON.stringify(bpModel.model) : bpModel.model;
+            bpModel.form = typeof bpModel.form === 'object' ? JSON.stringify(bpModel.form) : bpModel.form;
+          },
+          beforeBulkCreate: (bpModels: Attribute.BpModel[]) => {
+            for (const i in bpModels) {
+              bpModels[i].model = typeof bpModels[i].model === 'object'
+                ? JSON.stringify(bpModels[i].model)
+                : bpModels[i].model;
+              bpModels[i].form = typeof bpModels[i].form === 'object'
+                ? JSON.stringify(bpModels[i].form)
+                : bpModels[i].form;
+            }
+          },
+          beforeUpdate: (bpModel: Attribute.BpModel) => {
+            bpModel.model = typeof bpModel.model === 'object' ? JSON.stringify(bpModel.model) : bpModel.model;
+            bpModel.form = typeof bpModel.form === 'object' ? JSON.stringify(bpModel.form) : bpModel.form;
+          },
+          beforeBulkUpdate: (bpModels: Attribute.BpModel[]) => {
+            for (const i in bpModels) {
+              bpModels[i].model = typeof bpModels[i].model === 'object'
+                ? JSON.stringify(bpModels[i].model)
+                : bpModels[i].model;
+              bpModels[i].form = typeof bpModels[i].form === 'object'
+                ? JSON.stringify(bpModels[i].form)
+                : bpModels[i].form;
+            }
+          },
+        }
       }
     );
 
@@ -159,7 +200,42 @@ export class ModelService {
         freezeTableName: true,
         tableName: 'bp_instance',
         timestamps: true,
-        underscored: true
+        underscored: true,
+        hooks: {
+          afterFind: (instance: Attribute.BpInstance | Attribute.BpInstance[]) => {
+            if (Array.isArray(instance)) {
+              for (const i in instance) {
+                instance[i].model = JSON.parse(<string>instance[i].model);
+              }
+            } else {
+              instance.model = JSON.parse(<string>instance.model);
+            }
+          },
+          beforeCreate: (instance: Attribute.BpInstance) => {
+            if (typeof instance.model === 'object') {
+              instance.model = JSON.stringify(instance.model);
+            }
+          },
+          beforeBulkCreate: (instances: Attribute.BpInstance[]) => {
+            for (const i in instances) {
+              instances[i].model = typeof instances[i].model === 'object'
+                ? JSON.stringify(instances[i].model)
+                : instances[i].model;
+            }
+          },
+          beforeUpdate: (instance: Attribute.BpInstance) => {
+            if (typeof instance.model === 'object') {
+              instance.model = JSON.stringify(instance.model);
+            }
+          },
+          beforeBulkUpdate: (instances: Attribute.BpInstance[]) => {
+            for (const i in instances) {
+              instances[i].model = typeof instances[i].model === 'object'
+                ? JSON.stringify(instances[i].model)
+                : instances[i].model;
+            }
+          },
+        }
       }
     );
 
@@ -259,7 +335,42 @@ export class ModelService {
         freezeTableName: true,
         tableName: 'bp_process',
         timestamps: true,
-        underscored: true
+        underscored: true,
+        hooks: {
+          afterFind: (process: Attribute.BpProcess | Attribute.BpProcess[]) => {
+            if (Array.isArray(process)) {
+              for (const i in process) {
+                process[i].option = JSON.parse(<string>process[i].option);
+              }
+            } else {
+              process.option = JSON.parse(<string>process.option);
+            }
+          },
+          beforeCreate: (process: Attribute.BpProcess) => {
+            if (typeof process.option === 'object') {
+              process.option = JSON.stringify(process.option);
+            }
+          },
+          beforeBulkCreate: (processes: Attribute.BpProcess[]) => {
+            for (const i in process) {
+              processes[i].option = typeof processes[i].option === 'object'
+                ? JSON.stringify(processes[i].option)
+                : processes[i].option;
+            }
+          },
+          beforeUpdate: (process: Attribute.BpProcess) => {
+            if (typeof process.option === 'object') {
+              process.option = JSON.stringify(process.option);
+            }
+          },
+          beforeBulkUpdate: (processes: Attribute.BpProcess[]) => {
+            for (const i in processes) {
+              processes[i].option = typeof processes[i].option === 'object'
+                ? JSON.stringify(processes[i].option)
+                : processes[i].option;
+            }
+          },
+        }
       }
     );
 
@@ -316,7 +427,42 @@ export class ModelService {
         freezeTableName: true,
         tableName: 'bp_task',
         timestamps: true,
-        underscored: true
+        underscored: true,
+        hooks: {
+          afterFind: (task: Attribute.BpTask | Attribute.BpTask[]) => {
+            if (Array.isArray(task)) {
+              for (const i in task) {
+                task[i].option = JSON.parse(<string>task[i].option);
+              }
+            } else {
+              task.option = JSON.parse(<string>task.option);
+            }
+          },
+          beforeCreate: (task: Attribute.BpTask) => {
+            if (typeof task.option === 'object') {
+              task.option = JSON.stringify(task.option);
+            }
+          },
+          beforeBulkCreate: (tasks: Attribute.BpTask[]) => {
+            for (const i in tasks) {
+              tasks[i].option = typeof tasks[i].option === 'object'
+                ? JSON.stringify(tasks[i].option)
+                : tasks[i].option;
+            }
+          },
+          beforeUpdate: (task: Attribute.BpTask) => {
+            if (typeof task.option === 'object') {
+              task.option = JSON.stringify(task.option);
+            }
+          },
+          beforeBulkUpdate: (tasks: Attribute.BpTask[]) => {
+            for (const i in tasks) {
+              tasks[i].option = typeof tasks[i].option === 'object'
+                ? JSON.stringify(tasks[i].option)
+                : tasks[i].option;
+            }
+          },
+        }
       }
     );
 

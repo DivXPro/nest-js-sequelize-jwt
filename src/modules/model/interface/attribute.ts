@@ -8,8 +8,8 @@ export namespace Attribute {
     id?: number;
     groupId?: number;
     instanceId?: number;
-    form?: object;
-    data?: object;
+    form?: object | string;
+    data?: object | string;
   }
 
   export interface BpTask extends Timestamps {
@@ -18,7 +18,7 @@ export namespace Attribute {
     instanceId?: number;
     processId?: number;
     type?: string;
-    option?: object;
+    option?: object | string;
     userId?: number;
     sequence?: number;
     state?: number;
@@ -35,7 +35,7 @@ export namespace Attribute {
     userId?: number;
     approveMode?: number;
     state?: number;
-    option?: string;
+    option?: object | string;
   }
 
   export interface BpInstance extends Timestamps {
@@ -43,7 +43,7 @@ export namespace Attribute {
     groupId?: number;
     userId?: number;
     modelId?: number;
-    model?: object;
+    model?: object | string;
     state?: number;
     relevanceUserId?: number;
     isDeleted?: 0 | 1;
@@ -53,8 +53,8 @@ export namespace Attribute {
     id?: number;
     groupId?: number;
     workflowId?: number;
-    model?: object;
-    form?: object;
+    model?: object | string;
+    form?: object | string;
     isDeleted?: 0 | 1;
   }
 

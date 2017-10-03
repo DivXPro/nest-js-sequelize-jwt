@@ -13,7 +13,7 @@ import { MessageCodeError } from '../common/lib/error/MessageCodeError';
 import { sequelize } from '../common/config/dataBase';
 import { BpWorkflowService } from './bpWorkflow.service';
 import { ModelService } from '../model/model.service';
-import { BpInstanceService } from '../bpInstance/bpInstance.service';
+import { BpInstanceService } from './bpInstance.service';
 import { Attribute } from '../model/interface';
 
 @Controller()
@@ -74,7 +74,7 @@ export class BpWorkflowController {
         model: bpModel.model,
         relevanceUserId: userId,
       };
-      const bpInstance = await this.bpInstanceService.createInstance(inst);
+      const bpInstance = await this.bpInstanceService.createBpInstance(inst);
       return res.status(HttpStatus.OK).json(bpInstance.get({ plain: true }));
     }
   }

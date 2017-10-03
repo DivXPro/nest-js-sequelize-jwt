@@ -1,21 +1,26 @@
 import * as Sequelize from 'sequelize';
 import * as _ from 'lodash';
-import { Component } from '@nestjs/common';
+import { Component, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { ModelService } from '../model/model.service';
-import { BpProcessService } from '../bpProcess/bpProcess.service';
+import { BpProcessService } from './bpProcess.service';
 import { Attribute } from '../model/interface/attribute';
 import { Instance } from '../model/interface/instance';
-import { SQL } from '../common/sql';
 import { PROCESS_TYPE, STATE } from '../common/enum';
 
 const LOCK = Sequelize.Transaction.LOCK;
 
 @Component()
 export class BpInstanceService {
+  private bpProcessService: BpProcessService;
   constructor(
     private model: ModelService,
-    private bpProcessService: BpProcessService
+    private readonly moduleRef: ModuleRef
   ) {}
+  onModuleInit() {
+    this.bpProcessService = this.moduleRef.get<BpProcessService>(BpProcessService);
+  }
+
   public getBpInstance(
     id: number,
     transaction?: Sequelize.Transaction,
@@ -124,7 +129,7 @@ export class BpInstanceService {
 
   public async ignore(id: number, transaction: Sequelize.Transaction) {
     const bpInstance = await this.getBpInstance(id, transaction, LOCK.UPDATE);
-    if (bpInstance == null || bpInstance.id == null || bpInstance.isDeleted) {
+    if (bpInstance == null || bpInstance.id == null ) {
       // TODO: throw error
       return;
     }

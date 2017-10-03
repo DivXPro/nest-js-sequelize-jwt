@@ -1,4 +1,3 @@
-import { Column } from 'sequelize-typescript/lib/annotations/Column';
 import * as Sequelize from 'sequelize';
 import { Component } from '@nestjs/common';
 import { ModelService } from '../model/model.service';

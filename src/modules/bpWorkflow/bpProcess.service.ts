@@ -1,10 +1,11 @@
 import * as Sequelize from 'sequelize';
 import * as _ from 'lodash';
-import { Component } from '@nestjs/common';
+import { Component, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { sequelize } from '../common/config/dataBase';
 import { ModelService } from '../model/model.service';
-import { BpTaskService } from '../bpTask/bpTask.service';
-import { BpInstanceService } from '../bpInstance/bpInstance.service';
+import { BpTaskService } from './bpTask.service';
+import { BpInstanceService } from './bpInstance.service';
 import { Attribute } from '../model/interface/attribute';
 import { Instance } from '../model/interface/instance';
 import { Bpmn, BpmnFlow } from '../interface';
@@ -13,12 +14,17 @@ import { STATE, PROCESS_TYPE, TASK_TYPE, APPROVE_MODE } from '../common/enum';
 const LOCK = Sequelize.Transaction.LOCK;
 
 @Component()
-export class BpProcessService {
+export class BpProcessService implements OnModuleInit {
+  private bpInstanceService: BpInstanceService;
+  private bpTaskService: BpTaskService;
   constructor(
     private model: ModelService,
-    private bpTaskService: BpTaskService,
-    private bpInstanceService: BpInstanceService,
+    private readonly moduleRef: ModuleRef
   ) {}
+  onModuleInit() {
+    this.bpInstanceService = this.moduleRef.get<BpInstanceService>(BpInstanceService);
+    this.bpTaskService = this.moduleRef.get<BpTaskService>(BpTaskService);
+  }
   public getBpProcess(
     id: number,
     transaction?: Sequelize.Transaction,
@@ -62,6 +68,15 @@ export class BpProcessService {
       transaction,
       lock,
     });
+  }
+
+  public async createBpProcess(process: Attribute.BpProcess, transaction: Sequelize.Transaction) {
+    const bpProcess = await this.model.BpProcess.create(process, {
+      transaction,
+    });
+    const tasks = [];
+    // TODO: 获取process相关的task
+    this.makeTasks(bpProcess, tasks, transaction);
   }
 
   /**
@@ -455,9 +470,9 @@ export class BpProcessService {
     const bpProcess = process;
     const bpTasks = _.map(tasks, task => {
       return {
-        groupId: bpProcess.groupId,
-        instanceId: bpProcess.instanceId,
-        processId: bpProcess.id,
+        groupId: task.groupId || bpProcess.groupId,
+        instanceId: task.instanceId || bpProcess.instanceId,
+        processId: task.processId || bpProcess.id,
         type: TASK_TYPE.USERTASK,
         userId: task.userId,
         sequence: task.sequence,
@@ -465,23 +480,24 @@ export class BpProcessService {
       };
     });
     // TODO create tasks
+    return this.bpTaskService.createBpTasks(bpTasks, transaction);
   }
 
   /**
    * 创建process下的内部function任务
-   * @param option 任务选项
-   * @param t 事务实例
+   * @param process 任务所属process
+   * @param transaction 事务实例
    */
-  public makeFunctionTasks(option, t?: sequelize.Transaction) {
-    const task = new Task({
-      groupId: this.modelInstance.groupId,
-      instanceId: this.modelInstance.instanceId,
-      processId: this.modelInstance.id,
-      type: Task.TYPE.FUNCTION,
-      option,
-      state: Task.STATE.INIT
-    });
-    return task.save(null, t);
+  public makeFunctionTasks(process, transaction?: Sequelize.Transaction) {
+    const bpTask = {
+      groupId: process.groupId,
+      instanceId: process.instanceId,
+      processId: process.id,
+      type: TASK_TYPE.FUNCTION,
+      option: process.option,
+      state: STATE.INIT
+    };
+    return this.bpTaskService.createBpTask(bpTask, transaction);
   }
 
 }

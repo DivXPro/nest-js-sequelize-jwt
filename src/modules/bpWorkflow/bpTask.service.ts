@@ -1,7 +1,8 @@
 import * as Sequelize from 'sequelize';
-import { Component } from '@nestjs/common';
+import { Component, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { ModelService } from '../model/model.service';
-import { BpProcessService } from '../bpProcess/bpProcess.service';
+import { BpProcessService } from './bpProcess.service';
 import { Attribute } from '../model/interface/attribute';
 import { Instance } from '../model/interface/instance';
 import { STATE, PROCESS_TYPE, TASK_TYPE } from '../common/enum';
@@ -9,8 +10,13 @@ import { STATE, PROCESS_TYPE, TASK_TYPE } from '../common/enum';
 const LOCK = Sequelize.Transaction.LOCK;
 
 @Component()
-export class BpTaskService {
-  constructor(private model: ModelService, private bpProcessService: BpProcessService) {}
+export class BpTaskService implements OnModuleInit {
+  private bpProcessService: BpProcessService;
+  constructor(private model: ModelService, private readonly moduleRef: ModuleRef) {}
+  onModuleInit() {
+    this.bpProcessService = this.moduleRef.get<BpProcessService>(BpProcessService);
+  }
+
   public getBpTask(
     id: number,
     transaction?: Sequelize.Transaction,
@@ -31,13 +37,13 @@ export class BpTaskService {
     });
   }
 
-  public createTask(task: Attribute.BpTask, transaction?: Sequelize.Transaction) {
+  public createBpTask(task: Attribute.BpTask, transaction?: Sequelize.Transaction) {
     return this.model.BpTask.create(task, {
       transaction,
     });
   }
 
-  public createTasks(tasks: Attribute.BpTask[], transaction?: Sequelize.Transaction) {
+  public createBpTasks(tasks: Attribute.BpTask[], transaction?: Sequelize.Transaction) {
     return this.model.BpTask.bulkCreate(tasks, {
       transaction,
     });
